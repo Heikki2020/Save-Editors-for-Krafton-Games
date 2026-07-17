@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>The Callisto Protocol // Credits Editor</title>
+<style>
+  :root{
+    --bg-void:#090b0d;
+    --bg-panel:#11161a;
+    --bg-panel-raised:#171d22;
+    --accent-cyan:#4ee2da;
+    --accent-cyan-dim:#2a8a85;
+    --accent-amber:#ffb238;
+    --accent-red:#ff4d4d;
+    --text-primary:#ffffff;
+    --text-muted:#ffffff;
+    --border:#26313688;
+    --border-strong:#3a4a50;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    background:var(--bg-void);
+    color:var(--text-primary);
+    font-family:var(--font-sans);
+  }
+  body{
+    background-image:
+      linear-gradient(rgba(78,226,218,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(78,226,218,0.035) 1px, transparent 1px);
+    background-size:28px 28px;
+    padding:32px 16px 60px;
+    position:relative;
+  }
+  body::before{
+    content:"";
+    position:fixed; inset:0;
+    pointer-events:none;
+    background:repeating-linear-gradient(
+      0deg, rgba(255,255,255,0.018) 0px, rgba(255,255,255,0.018) 1px,
+      transparent 1px, transparent 3px
+    );
+    mix-blend-mode:overlay;
+    z-index:50;
+  }
+  .frame{
+    max-width:760px;
+    margin:0 auto;
+    border:1px solid var(--border-strong);
+    background:linear-gradient(180deg, var(--bg-panel) 0%, var(--bg-void) 140%);
+    box-shadow:0 0 0 1px rgba(0,0,0,0.6), 0 40px 80px -30px rgba(78,226,218,0.08), inset 0 0 60px rgba(0,0,0,0.5);
+    position:relative;
+  }
+  .frame::before, .frame::after{
+    content:""; position:absolute; width:14px; height:14px;
+    border:2px solid var(--accent-cyan-dim);
+  }
+  .frame::before{ top:-1px; left:-1px; border-right:none; border-bottom:none; }
+  .frame::after{ bottom:-1px; right:-1px; border-left:none; border-top:none; }
+
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 20px;
+    border-bottom:1px solid var(--border);
+    background:rgba(0,0,0,0.35);
+  }
+  .topbar .brand{
+    font-weight:700; letter-spacing:0.14em; font-size:14px;
+    color:var(--accent-cyan);
+    text-transform:uppercase;
+    display:flex; align-items:center; gap:10px;
+  }
+  .brand .dot{
+    width:8px; height:8px; background:var(--accent-cyan);
+    box-shadow:0 0 10px 2px var(--accent-cyan);
+    animation:pulse 2.2s ease-in-out infinite;
+    flex:none;
+  }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:0.25;} }
+  .topbar .ver{ font-family:var(--font-mono); font-size:12px; color:var(--text-muted); letter-spacing:0.05em; }
+
+  .body-pad{ padding:22px 22px 26px; }
+
+  #dropzone{
+    border:1.5px dashed var(--border-strong);
+    background:rgba(78,226,218,0.02);
+    padding:34px 20px;
+    text-align:center;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    position:relative;
+  }
+  #dropzone:hover, #dropzone.drag{
+    border-color:var(--accent-cyan);
+    background:rgba(78,226,218,0.06);
+  }
+  #dropzone .icon{
+    font-family:var(--font-mono);
+    font-size:26px; color:var(--accent-cyan-dim); margin-bottom:10px; letter-spacing:0.2em;
+  }
+  #dropzone .main-txt{ font-size:15px; font-weight:600; letter-spacing:0.03em; }
+  #dropzone .sub-txt{ font-size:12px; color:var(--text-muted); margin-top:6px; font-family:var(--font-mono); }
+  #fileInput{ display:none; }
+
+  #status{
+    margin-top:14px;
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--text-muted);
+    display:none;
+    padding:10px 12px;
+    border-left:2px solid var(--border-strong);
+  }
+  #status.err{ color:var(--accent-red); border-left-color:var(--accent-red); display:block;}
+  #status.ok{ color:var(--accent-cyan); border-left-color:var(--accent-cyan); display:block;}
+
+  #result{ display:none; margin-top:22px; }
+  .credits-card{
+    border:1px solid var(--border-strong);
+    background:var(--bg-panel-raised);
+    padding:22px;
+    position:relative;
+    overflow:hidden;
+  }
+  .credits-card::before{
+    content:"CR"; position:absolute; right:14px; top:8px;
+    font-family:var(--font-mono); font-size:52px; font-weight:700;
+    color:rgba(78,226,218,0.04); letter-spacing:-2px; pointer-events:none;
+  }
+  .credits-label{
+    font-size:12px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--text-muted); margin-bottom:14px; font-weight:600;
+  }
+  .credits-row{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+  .current-val{
+    font-family:var(--font-mono);
+    font-size:34px; font-weight:700; color:var(--text-primary);
+    letter-spacing:0.01em;
+  }
+  .arrow{ color:var(--accent-cyan-dim); font-size:20px; }
+  .new-val-wrap{ display:flex; flex-direction:column; gap:6px; }
+  .new-val-wrap label{
+    font-size:10.5px; letter-spacing:0.14em; color:var(--text-muted); text-transform:uppercase;
+  }
+  #newValue{
+    font-family:var(--font-mono);
+    font-size:26px; font-weight:700;
+    background:rgba(0,0,0,0.4);
+    border:1px solid var(--border-strong);
+    color:var(--accent-cyan);
+    padding:6px 12px;
+    width:180px;
+    outline:none;
+  }
+  #newValue:focus{ border-color:var(--accent-cyan); box-shadow:0 0 0 2px rgba(78,226,218,0.15); }
+  .actions{ display:flex; gap:12px; margin-top:24px; flex-wrap:wrap; }
+  .btn{
+    font-family:var(--font-sans);
+    font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+    font-size:14px;
+    padding:13px 22px;
+    border:1px solid var(--border-strong);
+    background:transparent; color:var(--text-primary);
+    cursor:pointer;
+    position:relative;
+    transition:all .12s ease;
+  }
+  .btn.primary{
+    background:var(--accent-cyan); color:#04211f; border-color:var(--accent-cyan);
+  }
+  .btn.primary:hover{ background:#6dece5; }
+  .btn.primary:disabled{
+    background:#274946; color:#4c6663; border-color:#274946; cursor:not-allowed;
+  }
+  .btn.ghost:hover{ border-color:var(--accent-cyan); color:var(--accent-cyan); }
+  .btn.ghost{ background:repeating-linear-gradient(135deg, transparent 0 8px, rgba(255,255,255,0.02) 8px 16px); }
+
+  .note{
+    margin-top:16px; font-size:12px; color:var(--text-muted); line-height:1.6;
+    font-family:var(--font-mono);
+  }
+  .note b{ color:var(--accent-amber); font-weight:600; }
+
+  footer{
+    max-width:760px; margin:14px auto 0; text-align:center;
+    font-family:var(--font-mono); font-size:10.5px; color:var(--text-muted);
+    letter-spacing:0.06em;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame">
+  <div class="topbar">
+    <div class="brand"><span class="dot"></span>The Callisto Protocol // Credits Editor</div>
+    <div class="ver">V1.0 by Henry</div>
+  </div>
+
+  <div class="body-pad">
+    <div id="dropzone">
+      <div class="icon">&#9633;&#9633;&#9633;</div>
+      <div class="main-txt">DROP .SAV FILE OR CLICK TO BROWSE</div>
+      <div class="sub-txt">PhxManualSave / PhxAutoSave</div>
+      <input type="file" id="fileInput" accept=".sav">
+    </div>
+
+    <div id="status"></div>
+
+    <div id="result">
+      <div class="credits-card">
+        <div class="credits-label">CREDITS</div>
+        <div class="credits-row">
+          <div class="current-val" id="currentVal">0</div>
+          <div class="arrow">&#8594;</div>
+          <div class="new-val-wrap">
+            <label for="newValue">NEW VALUE</label>
+            <input type="number" id="newValue" min="0" max="2147483647" step="1">
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn primary" id="downloadBtn" disabled>Download Patched .sav</button>
+        <button class="btn ghost" id="resetBtn">Load Another File</button>
+      </div>
+
+      <p class="note"><b>Back up your original save</b> before overwriting it in-game.</p>
+    </div>
+  </div>
+</div>
+
+<footer>NOT AFFILIATED WITH STRIKING DISTANCE STUDIOS OR KRAFTON</footer>
+
+<script>
+(function(){
+  const MARKER = [0x08,0x00,0x00,0x00,0x43,0x72,0x65,0x64,0x69,0x74,0x73,0x00];
+  const dropzone = document.getElementById('dropzone');
+  const fileInput = document.getElementById('fileInput');
+  const statusEl = document.getElementById('status');
+  const resultEl = document.getElementById('result');
+  const currentValEl = document.getElementById('currentVal');
+  const newValueEl = document.getElementById('newValue');
+  const downloadBtn = document.getElementById('downloadBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let bytes = null;
+  let valueOffset = -1;
+  let originalValue = 0;
+  let fileName = 'save.sav';
+
+  function setStatus(msg, cls){
+    statusEl.textContent = msg;
+    statusEl.className = cls ? cls : '';
+    statusEl.style.display = msg ? 'block' : 'none';
+  }
+
+  function findMarker(u8){
+    outer:
+    for(let i=0; i<=u8.length-MARKER.length; i++){
+      for(let j=0;j<MARKER.length;j++){
+        if(u8[i+j] !== MARKER[j]) continue outer;
+      }
+      return i;
+    }
+    return -1;
+  }
+
+  function loadFile(file){
+    fileName = file.name;
+    const reader = new FileReader();
+    reader.onload = function(e){
+      bytes = new Uint8Array(e.target.result);
+
+      if(new TextDecoder().decode(bytes.slice(0,4)) !== 'GVAS'){
+        setStatus('This doesn\'t look like a GVAS save file (missing "GVAS" header). Load a Callisto Protocol .sav file.', 'err');
+        resultEl.style.display = 'none';
+        return;
+      }
+
+      const offset = findMarker(bytes);
+      if(offset === -1){
+        setStatus('No "Credits" record found in this file. It may be from a version of the game with a different save layout, or the field was never initialized.', 'err');
+        resultEl.style.display = 'none';
+        return;
+      }
+
+      valueOffset = offset + MARKER.length;
+      const view = new DataView(bytes.buffer);
+      originalValue = view.getInt32(valueOffset, true);
+
+      currentValEl.textContent = originalValue.toLocaleString();
+      newValueEl.value = originalValue;
+      downloadBtn.disabled = true;
+
+      setStatus('Loaded ' + fileName + '.', 'ok');
+      resultEl.style.display = 'block';
+    };
+    reader.onerror = function(){
+      setStatus('Could not read that file. Try again.', 'err');
+    };
+    reader.readAsArrayBuffer(file);
+  }
+
+  dropzone.addEventListener('click', ()=> fileInput.click());
+  fileInput.addEventListener('change', (e)=>{
+    if(e.target.files[0]) loadFile(e.target.files[0]);
+  });
+  ['dragenter','dragover'].forEach(evt=>{
+    dropzone.addEventListener(evt, (e)=>{ e.preventDefault(); dropzone.classList.add('drag'); });
+  });
+  ['dragleave','drop'].forEach(evt=>{
+    dropzone.addEventListener(evt, (e)=>{ e.preventDefault(); dropzone.classList.remove('drag'); });
+  });
+  dropzone.addEventListener('drop', (e)=>{
+    const f = e.dataTransfer.files[0];
+    if(f) loadFile(f);
+  });
+
+  newValueEl.addEventListener('input', ()=>{
+    const v = parseInt(newValueEl.value, 10);
+    downloadBtn.disabled = isNaN(v) || v < 0 || v > 2147483647 || v === originalValue;
+  });
+
+  downloadBtn.addEventListener('click', ()=>{
+    const newVal = parseInt(newValueEl.value, 10);
+    if(isNaN(newVal) || newVal < 0 || newVal > 2147483647) return;
+    const patched = new Uint8Array(bytes);
+    const view = new DataView(patched.buffer);
+    view.setInt32(valueOffset, newVal, true);
+
+    const blob = new Blob([patched], {type:'application/octet-stream'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const base = fileName.replace(/\.sav$/i, '');
+    a.href = url;
+    a.download = base + '_edited.sav';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    originalValue = newVal;
+    currentValEl.textContent = originalValue.toLocaleString();
+    bytes = patched;
+    downloadBtn.disabled = true;
+    setStatus('Patched credits to ' + originalValue.toLocaleString() + ' and downloaded ' + base + '_edited.sav.', 'ok');
+  });
+
+  resetBtn.addEventListener('click', ()=>{
+    bytes = null; valueOffset = -1; originalValue = 0;
+    fileInput.value = '';
+    resultEl.style.display = 'none';
+    setStatus('', '');
+  });
+})();
+</script>
+</body>
+</html>
